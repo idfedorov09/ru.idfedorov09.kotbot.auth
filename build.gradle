@@ -30,6 +30,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    implementation 'org.telegram:telegrambots:6.7.0'
+
     implementation 'com.github.sno-mephi:flow-library:2.2.2-stable'
     implementation project(':ru.idfedorov09.kotbot')
 }
