@@ -1,0 +1,3 @@
+[submodule "ru.idfedorov09.kotbot"]
+	path = ru.idfedorov09.kotbot
+	url = https://github.com/idfedorov09/ru.tgb.base.core.git
