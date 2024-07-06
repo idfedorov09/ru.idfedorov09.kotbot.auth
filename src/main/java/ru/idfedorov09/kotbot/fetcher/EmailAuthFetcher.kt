@@ -1,9 +1,12 @@
 package ru.idfedorov09.kotbot.fetcher
 
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.Update
+import ru.idfedorov09.kotbot.domain.AuthLastUserActionType
 import ru.idfedorov09.telegram.bot.base.domain.annotation.Command
 import ru.idfedorov09.telegram.bot.base.domain.annotation.InputText
+import ru.idfedorov09.telegram.bot.base.domain.entity.UserEntity
 import ru.idfedorov09.telegram.bot.base.domain.service.MessageSenderService
 import ru.idfedorov09.telegram.bot.base.domain.service.UserService
 import ru.idfedorov09.telegram.bot.base.fetchers.DefaultFetcher
@@ -18,14 +21,22 @@ class EmailAuthFetcher(
     private val updatesUtil: UpdatesUtil,
 ): DefaultFetcher() {
 
+    companion object {
+        val log = LoggerFactory.getLogger(EmailAuthFetcher::class.java)!!
+    }
+
     @InjectData
     fun doFetch(){}
 
     @Command("/start")
     fun startCommand(update: Update) {
         val chatId = updatesUtil.getChatId(update) ?: return
-        // TODO: not registered
-        userService.findNotDeletedByTui(chatId)?.let { return }
+        val userId = updatesUtil.getUserId(update) ?: return
+
+        userService.findNotDeletedByTui(chatId)?.let {
+            // TODO
+            return
+        }
 
         messageSenderService.sendMessage(
             MessageParams(
@@ -33,7 +44,12 @@ class EmailAuthFetcher(
                 text = "Для использования бота необходимо авторизироваться. Введите вашу корпоративную почту."
             )
         )
-        // TODO: save last user action type
+        userService.save(
+            UserEntity(
+                tui = userId,
+                lastUserActionType = AuthLastUserActionType.ENTER_EMAIL,
+            )
+        )
     }
 
     // TODO: ENTER_EMAIL.type
@@ -42,5 +58,6 @@ class EmailAuthFetcher(
         // TODO: проверка email'а, fail -> сообщение об ошибке, LUAT -> default
         // TODO: генерация кода и отправка письма
         // TODO: сообщение об этом коде, перевод LUAT если все ок
+        log.info("Ok, enter email")
     }
 }
