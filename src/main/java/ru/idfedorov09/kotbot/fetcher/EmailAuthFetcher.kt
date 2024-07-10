@@ -6,7 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import ru.idfedorov09.kotbot.domain.AuthLastUserActionType
 import ru.idfedorov09.telegram.bot.base.domain.annotation.Command
 import ru.idfedorov09.telegram.bot.base.domain.annotation.InputText
-import ru.idfedorov09.telegram.bot.base.domain.entity.UserEntity
+import ru.idfedorov09.telegram.bot.base.domain.dto.UserDTO
 import ru.idfedorov09.telegram.bot.base.domain.service.MessageSenderService
 import ru.idfedorov09.telegram.bot.base.domain.service.UserService
 import ru.idfedorov09.telegram.bot.base.fetchers.DefaultFetcher
@@ -25,18 +25,19 @@ class EmailAuthFetcher(
         val log = LoggerFactory.getLogger(EmailAuthFetcher::class.java)!!
     }
 
+    private lateinit var domains: String
+
     @InjectData
     fun doFetch(){}
 
     @Command("/start")
-    fun startCommand(update: Update) {
+    fun startCommand(
+        update: Update,
+        user: UserDTO
+    ) {
         val chatId = updatesUtil.getChatId(update) ?: return
-        val userId = updatesUtil.getUserId(update) ?: return
 
-        userService.findNotDeletedByTui(chatId)?.let {
-            // TODO
-            return
-        }
+        // TODO: пользователь уже авторизирован ?
 
         messageSenderService.sendMessage(
             MessageParams(
@@ -45,19 +46,41 @@ class EmailAuthFetcher(
             )
         )
         userService.save(
-            UserEntity(
-                tui = userId,
-                lastUserActionType = AuthLastUserActionType.ENTER_EMAIL,
+            user.copy(
+                lastUserActionType = AuthLastUserActionType.ENTER_EMAIL
             )
         )
     }
 
-    // TODO: ENTER_EMAIL.type
     @InputText("ENTER_CORP_EMAIL")
     fun enterEmail(update: Update) {
-        // TODO: проверка email'а, fail -> сообщение об ошибке, LUAT -> default
+        val text = update.message.text.trim()
+        if (!isValidEmail(text)) {
+            messageSenderService.sendMessage(
+                MessageParams(
+                    chatId = updatesUtil.getChatId(update)!!,
+                    text = "Некорректный email.",
+                )
+            )
+            return
+        }
         // TODO: генерация кода и отправка письма
         // TODO: сообщение об этом коде, перевод LUAT если все ок
         log.info("Ok, enter email")
+    }
+
+    @InputText("ENTER_VERIFY_CODE")
+    fun enterVerifyCode(update: Update) {
+        // TODO
+    }
+
+    fun setDomains(domainList: List<String>) {
+        domains = domainList
+            .joinToString(separator = "|") { it.replace(".", "\\.") }
+    }
+
+    private fun isValidEmail(text: String): Boolean {
+        val emailRegex = "^[A-Za-z0-9.+_-]+@($domains)$"
+        return text.matches(emailRegex.toRegex())
     }
 }

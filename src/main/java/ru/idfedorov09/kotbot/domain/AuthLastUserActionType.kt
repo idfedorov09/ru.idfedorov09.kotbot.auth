@@ -7,4 +7,8 @@ object AuthLastUserActionType {
         "ENTER_CORP_EMAIL",
         "Ввод корпоративной почты для аутентификации"
     )
+    val ENTER_VERIFY_CODE = LastUserActionType(
+        "ENTER_VERIFY_CODE",
+        "Ввод кода подтверждения почты"
+    )
 }
