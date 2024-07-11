@@ -4,6 +4,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.Update
 import ru.idfedorov09.kotbot.domain.AuthLastUserActionType
+import ru.idfedorov09.kotbot.domain.service.AuthRedisService
+import ru.idfedorov09.kotbot.service.EmailVerificationService
 import ru.idfedorov09.telegram.bot.base.domain.annotation.Command
 import ru.idfedorov09.telegram.bot.base.domain.annotation.InputText
 import ru.idfedorov09.telegram.bot.base.domain.dto.UserDTO
@@ -19,6 +21,8 @@ class EmailAuthFetcher(
     private val userService: UserService,
     private val messageSenderService: MessageSenderService,
     private val updatesUtil: UpdatesUtil,
+    private val emailVerificationService: EmailVerificationService,
+    private val authRedisService: AuthRedisService,
 ): DefaultFetcher() {
 
     companion object {
@@ -53,7 +57,10 @@ class EmailAuthFetcher(
     }
 
     @InputText("ENTER_CORP_EMAIL")
-    fun enterEmail(update: Update) {
+    fun enterEmail(
+        update: Update,
+        user: UserDTO
+    ) {
         val text = update.message.text.trim()
         if (!isValidEmail(text)) {
             messageSenderService.sendMessage(
@@ -64,14 +71,49 @@ class EmailAuthFetcher(
             )
             return
         }
-        // TODO: генерация кода и отправка письма
-        // TODO: сообщение об этом коде, перевод LUAT если все ок
-        log.info("Ok, enter email")
+
+        val code = emailVerificationService.sendVerificationEmail(text)
+        authRedisService.setVerifyCode(user.tui!!.toLong(), code, 50)
+        userService.save(
+            user.copy(
+                lastUserActionType = AuthLastUserActionType.ENTER_VERIFY_CODE
+            )
+        )
+        messageSenderService.sendMessage(
+            MessageParams(
+                chatId = updatesUtil.getChatId(update)!!,
+                text = "Введите код подтверждения, отправленный на почту.",
+            )
+        )
     }
 
     @InputText("ENTER_VERIFY_CODE")
-    fun enterVerifyCode(update: Update) {
-        // TODO
+    fun enterVerifyCode(
+        update: Update,
+        user: UserDTO,
+    ) {
+        val text = update.message.text.trim()
+        if (authRedisService.getVerifyCode(user.tui!!.toLong()) != text) {
+            messageSenderService.sendMessage(
+                MessageParams(
+                    chatId = updatesUtil.getChatId(update)!!,
+                    text = "Повторите попытку.",
+                )
+            )
+            return
+        }
+
+        userService.save(
+            user.copy(
+                lastUserActionType = AuthLastUserActionType.DEFAULT
+            )
+        )
+        messageSenderService.sendMessage(
+            MessageParams(
+                chatId = updatesUtil.getChatId(update)!!,
+                text = "Вы успешно авторизировались.",
+            )
+        )
     }
 
     fun setDomains(domainList: List<String>) {

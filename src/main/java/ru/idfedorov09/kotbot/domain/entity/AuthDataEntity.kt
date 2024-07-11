@@ -34,8 +34,6 @@ open class AuthDataEntity(
         id = id,
         email = email,
         isVerified = isVerified ?: false,
-        verifyCode = tempVerifyCode,
-        codeExpiration = codeExpirationTime,
         user = user,
     )
 }

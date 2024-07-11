@@ -10,6 +10,8 @@ class EmailService(
 ) {
     fun sendEmail(toEmail: String, subject: String, body: String) {
         val message = SimpleMailMessage().apply {
+            // TODO
+            from = "mailtrap@sno-team.ru"
             setTo(toEmail)
             setSubject(subject)
             setText(body)
