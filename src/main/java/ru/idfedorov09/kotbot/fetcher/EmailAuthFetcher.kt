@@ -1,6 +1,5 @@
 package ru.idfedorov09.kotbot.fetcher
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.Update
 import ru.idfedorov09.kotbot.domain.AuthLastUserActionType
@@ -12,7 +11,6 @@ import ru.idfedorov09.telegram.bot.base.domain.annotation.Command
 import ru.idfedorov09.telegram.bot.base.domain.annotation.InputText
 import ru.idfedorov09.telegram.bot.base.domain.dto.UserDTO
 import ru.idfedorov09.telegram.bot.base.domain.service.MessageSenderService
-import ru.idfedorov09.telegram.bot.base.domain.service.UserService
 import ru.idfedorov09.telegram.bot.base.fetchers.DefaultFetcher
 import ru.idfedorov09.telegram.bot.base.util.MessageParams
 import ru.idfedorov09.telegram.bot.base.util.UpdatesUtil
@@ -20,17 +18,12 @@ import ru.mephi.sno.libs.flow.belly.InjectData
 
 @Component
 class EmailAuthFetcher(
-    private val userService: UserService,
     private val messageSenderService: MessageSenderService,
     private val updatesUtil: UpdatesUtil,
     private val emailVerificationService: EmailVerificationService,
     private val authRedisService: AuthRedisService,
     private val authDataService: AuthDataService,
 ): DefaultFetcher() {
-
-    companion object {
-        val log = LoggerFactory.getLogger(EmailAuthFetcher::class.java)!!
-    }
 
     private lateinit var domains: String
 
@@ -52,18 +45,14 @@ class EmailAuthFetcher(
                 text = "Для использования бота необходимо авторизироваться. Введите вашу корпоративную почту."
             )
         )
-        userService.save(
-            user.copy(
-                lastUserActionType = AuthLastUserActionType.ENTER_EMAIL
-            )
-        )
+        user.lastUserActionType = AuthLastUserActionType.ENTER_EMAIL
     }
 
     @InputText("ENTER_CORP_EMAIL")
     fun enterEmail(
         update: Update,
         user: UserDTO
-    ): UserDTO {
+    ) {
         val email = update.message.text.trim()
         if (!isValidEmail(email)) {
             messageSenderService.sendMessage(
@@ -72,21 +61,17 @@ class EmailAuthFetcher(
                     text = "Некорректный email.",
                 )
             )
-            return user
+            return
         }
 
         val code = emailVerificationService.sendVerificationEmail(email)
         authRedisService.setVerifyCode(user.tui!!.toLong(), code, 50)
-        val updatedUser = userService.save(
-            user.copy(
-                lastUserActionType = AuthLastUserActionType.ENTER_VERIFY_CODE
-            )
-        )!!
+        user.lastUserActionType = AuthLastUserActionType.ENTER_VERIFY_CODE
         authDataService.save(
             AuthDataDTO(
                 email = email,
                 isVerified = false,
-                user = updatedUser,
+                user = user,
             )
         )
         messageSenderService.sendMessage(
@@ -95,7 +80,6 @@ class EmailAuthFetcher(
                 text = "Введите код подтверждения, отправленный на почту.",
             )
         )
-        return updatedUser
     }
 
     @InputText("ENTER_VERIFY_CODE")
@@ -114,11 +98,7 @@ class EmailAuthFetcher(
             return
         }
 
-        userService.save(
-            user.copy(
-                lastUserActionType = AuthLastUserActionType.DEFAULT
-            )
-        )
+        user.lastUserActionType = AuthLastUserActionType.DEFAULT
 
         authDataService.updateVerified(user, true)
         messageSenderService.sendMessage(
