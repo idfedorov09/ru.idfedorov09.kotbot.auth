@@ -33,11 +33,10 @@ class EmailAuthFetcher(
     @Command("/start")
     fun startCommand(
         update: Update,
-        user: UserDTO
+        user: UserDTO,
+        authData: AuthDataDTO,
     ) {
         val chatId = updatesUtil.getChatId(update) ?: return
-
-        // TODO: пользователь уже авторизирован ?
 
         messageSenderService.sendMessage(
             MessageParams(

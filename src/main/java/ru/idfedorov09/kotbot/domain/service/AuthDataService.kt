@@ -7,6 +7,7 @@ import ru.idfedorov09.kotbot.domain.entity.AuthDataEntity
 import ru.idfedorov09.kotbot.repository.AuthDataRepository
 import ru.idfedorov09.telegram.bot.base.domain.dto.UserDTO
 import ru.idfedorov09.telegram.bot.base.domain.entity.UserEntity
+import kotlin.jvm.optionals.getOrNull
 
 @Service
 class AuthDataService {
@@ -26,4 +27,6 @@ class AuthDataService {
         userDTO.id ?: return 0
         return authDataRepository.updateIsVerified(userDTO.id!!, isVerified)
     }
+
+    open fun getAuthDataByUserId(userId: Long) = authDataRepository.findById(userId).getOrNull()?.toDTO()
 }
