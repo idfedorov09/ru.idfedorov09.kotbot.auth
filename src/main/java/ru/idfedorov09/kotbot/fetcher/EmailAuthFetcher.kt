@@ -7,6 +7,7 @@ import ru.idfedorov09.kotbot.domain.dto.AuthDataDTO
 import ru.idfedorov09.kotbot.domain.service.AuthDataService
 import ru.idfedorov09.kotbot.domain.service.AuthRedisService
 import ru.idfedorov09.kotbot.service.EmailVerificationService
+import ru.idfedorov09.telegram.bot.base.domain.LastUserActionTypes
 import ru.idfedorov09.telegram.bot.base.domain.annotation.Command
 import ru.idfedorov09.telegram.bot.base.domain.annotation.InputText
 import ru.idfedorov09.telegram.bot.base.domain.dto.UserDTO
@@ -97,7 +98,7 @@ class EmailAuthFetcher(
             return
         }
 
-        user.lastUserActionType = AuthLastUserActionType.DEFAULT
+        user.lastUserActionType = LastUserActionTypes.DEFAULT
 
         authDataService.updateVerified(user, true)
         messageSenderService.sendMessage(
