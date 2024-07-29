@@ -65,6 +65,7 @@ class EmailAuthFetcher(
         }
 
         val code = emailVerificationService.sendVerificationEmail(email)
+        // TODO: duration в настройки
         authRedisService.setVerifyCode(user.tui!!.toLong(), code, 50)
         user.lastUserActionType = AuthLastUserActionType.ENTER_VERIFY_CODE
         authDataService.save(
