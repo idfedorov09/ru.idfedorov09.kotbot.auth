@@ -9,7 +9,7 @@ data class AuthDataDTO(
     val id: Long? = null,
     val email: String? = null,
     val isVerified: Boolean = false,
-    private val user: UserEntity
+    private val user: UserEntity // TODO: почему тут entity?
 ) : BaseDTO<AuthDataEntity>() {
 
     constructor(
