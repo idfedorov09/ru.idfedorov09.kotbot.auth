@@ -64,7 +64,17 @@ class EmailAuthFetcher(
             return
         }
 
-        val code = emailVerificationService.sendVerificationEmail(email)
+        val code = emailVerificationService
+            .sendVerificationEmail(email)
+            ?: run {
+                messageSenderService.sendMessage(
+                    MessageParams(
+                        chatId = updatesUtil.getChatId(update)!!,
+                        text = "Произошла ошибка при отправке сообщения. Попробуйте ввести почту еще раз.",
+                    )
+                )
+                return
+            }
         // TODO: duration в настройки
         authRedisService.setVerifyCode(user.tui!!.toLong(), code, 50)
         user.lastUserActionType = AuthLastUserActionType.ENTER_VERIFY_CODE

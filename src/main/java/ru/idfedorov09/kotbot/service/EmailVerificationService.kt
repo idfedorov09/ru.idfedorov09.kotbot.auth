@@ -12,15 +12,19 @@ class EmailVerificationService(
     /**
      * Отправляет письмо с кодом подтверждения. Возвращает код подтверждения
      */
-    fun sendVerificationEmail(toEmail: String): String {
+    fun sendVerificationEmail(toEmail: String): String? {
         val code = generateVerifyCode()
         val message = "Код подтверждения: $code"
         val subject = "Подтверждение входа в бота Telegram"
-        emailService.sendEmail(
-            toEmail,
-            subject,
-            message
-        )
+        runCatching {
+            emailService.sendEmail(
+                toEmail,
+                subject,
+                message
+            )
+        }.onFailure {
+            return null
+        }
         return code
     }
 
