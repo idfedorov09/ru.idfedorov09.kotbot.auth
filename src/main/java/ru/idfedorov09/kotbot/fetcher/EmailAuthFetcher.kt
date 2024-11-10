@@ -1,5 +1,7 @@
 package ru.idfedorov09.kotbot.fetcher
 
+import jakarta.mail.internet.AddressException
+import jakarta.mail.internet.InternetAddress
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.Update
 import ru.idfedorov09.kotbot.domain.AuthLastUserActionType
@@ -85,6 +87,7 @@ class EmailAuthFetcher(
                 user = user,
             )
         )
+        // TODO: отправить повторно
         messageSenderService.sendMessage(
             MessageParams(
                 chatId = updatesUtil.getChatId(update)!!,
@@ -125,8 +128,12 @@ class EmailAuthFetcher(
             .joinToString(separator = "|") { it.replace(".", "\\.") }
     }
 
-    private fun isValidEmail(text: String): Boolean {
-        val emailRegex = "^[A-Za-z0-9.+_-]+@($domains)$"
-        return text.matches(emailRegex.toRegex())
+    private fun isValidEmail(email: String): Boolean {
+        try {
+            InternetAddress(email).validate()
+            return true
+        } catch (e: AddressException) {
+            return false
+        }
     }
 }
