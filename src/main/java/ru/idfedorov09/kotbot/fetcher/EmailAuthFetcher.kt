@@ -35,6 +35,7 @@ class EmailAuthFetcher(
     // TODO: ради избежания дублирования кода что-то придумать, думаю можно с генераторами кода (кста найс идея)
     companion object {
         const val AUTH_RESEND_CODE = "resend_confirm_code"
+        const val AUTH_CHANGE_EMAIL = "auth_change_email"
     }
 
     @InjectData
@@ -44,7 +45,6 @@ class EmailAuthFetcher(
     fun startCommand(
         update: Update,
         user: UserDTO,
-        authData: AuthDataDTO,
     ) {
         val chatId = updatesUtil.getChatId(update) ?: return
 
@@ -52,6 +52,27 @@ class EmailAuthFetcher(
             MessageParams(
                 chatId = chatId,
                 text = "Для использования бота необходимо авторизироваться. Введите вашу корпоративную почту."
+            )
+        )
+        user.lastUserActionType = AuthLastUserActionType.ENTER_EMAIL
+    }
+
+    @Callback(AUTH_CHANGE_EMAIL)
+    fun changeEmail(
+        update: Update,
+        user: UserDTO,
+        authData: AuthDataDTO,
+
+    ) {
+        deleteUpdateMessage()
+        if (authData.isVerified)
+            return
+
+        val chatId = updatesUtil.getChatId(update) ?: return
+        messageSenderService.sendMessage(
+            MessageParams(
+                chatId = chatId,
+                text = "Введите вашу корпоративную почту.",
             )
         )
         user.lastUserActionType = AuthLastUserActionType.ENTER_EMAIL
@@ -105,7 +126,6 @@ class EmailAuthFetcher(
         if (update.hasCallbackQuery())
             deleteUpdateMessage()
 
-        // TODO: изменить почту и отправить заново
         val keyboard =
             listOf(
                 listOf(
@@ -113,7 +133,13 @@ class EmailAuthFetcher(
                         callbackData = AUTH_RESEND_CODE,
                         metaText = "Выслать повторно",
                     ).save().createKeyboard()
-                )
+                ),
+                listOf(
+                    CallbackDataDTO(
+                        callbackData = AUTH_CHANGE_EMAIL,
+                        metaText = "Изменить почту",
+                    ).save().createKeyboard()
+                ),
             )
         messageSenderService.sendMessage(
             MessageParams(

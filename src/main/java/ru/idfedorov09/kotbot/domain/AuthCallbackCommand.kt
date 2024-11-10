@@ -7,4 +7,8 @@ object AuthCallbackCommand {
         command = "resend_confirm_code",
         description = "Отправить код подтверждения заново",
     )
+    val AUTH_CHANGE_EMAIL = CallbackCommand(
+        command = "auth_change_email",
+        description = "Изменить почту",
+    )
 }
