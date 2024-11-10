@@ -10,8 +10,10 @@ import ru.idfedorov09.kotbot.domain.service.AuthDataService
 import ru.idfedorov09.kotbot.domain.service.AuthRedisService
 import ru.idfedorov09.kotbot.service.EmailVerificationService
 import ru.idfedorov09.telegram.bot.base.domain.LastUserActionTypes
+import ru.idfedorov09.telegram.bot.base.domain.annotation.Callback
 import ru.idfedorov09.telegram.bot.base.domain.annotation.Command
 import ru.idfedorov09.telegram.bot.base.domain.annotation.InputText
+import ru.idfedorov09.telegram.bot.base.domain.dto.CallbackDataDTO
 import ru.idfedorov09.telegram.bot.base.domain.dto.UserDTO
 import ru.idfedorov09.telegram.bot.base.domain.service.MessageSenderService
 import ru.idfedorov09.telegram.bot.base.fetchers.DefaultFetcher
@@ -29,6 +31,11 @@ class EmailAuthFetcher(
 ): DefaultFetcher() {
 
     private lateinit var domains: String
+
+    // TODO: ради избежания дублирования кода что-то придумать, думаю можно с генераторами кода (кста найс идея)
+    companion object {
+        const val AUTH_RESEND_CODE = "resend_confirm_code"
+    }
 
     @InjectData
     fun doFetch(){}
@@ -50,12 +57,19 @@ class EmailAuthFetcher(
         user.lastUserActionType = AuthLastUserActionType.ENTER_EMAIL
     }
 
+    // TODO: ограничения на попытки
     @InputText("ENTER_CORP_EMAIL")
+    @Callback(AUTH_RESEND_CODE)
     fun enterEmail(
         update: Update,
-        user: UserDTO
+        user: UserDTO,
+        authData: AuthDataDTO,
     ) {
-        val email = update.message.text.trim()
+        if (authData.isVerified)
+            return
+
+        val email = update.message?.text?.trim() ?: authData.email!!
+
         if (!isValidEmail(email)) {
             messageSenderService.sendMessage(
                 MessageParams(
@@ -87,11 +101,25 @@ class EmailAuthFetcher(
                 user = user,
             )
         )
-        // TODO: отправить повторно
+
+        if (update.hasCallbackQuery())
+            deleteUpdateMessage()
+
+        // TODO: изменить почту и отправить заново
+        val keyboard =
+            listOf(
+                listOf(
+                    CallbackDataDTO(
+                        callbackData = AUTH_RESEND_CODE,
+                        metaText = "Выслать повторно",
+                    ).save().createKeyboard()
+                )
+            )
         messageSenderService.sendMessage(
             MessageParams(
                 chatId = updatesUtil.getChatId(update)!!,
                 text = "Введите код подтверждения, отправленный на почту.",
+                replyMarkup = createKeyboard(keyboard)
             )
         )
     }
