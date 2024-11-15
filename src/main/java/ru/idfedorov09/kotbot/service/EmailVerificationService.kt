@@ -1,5 +1,6 @@
 package ru.idfedorov09.kotbot.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.idfedorov09.telegram.bot.base.domain.service.EmailService
 import kotlin.random.Random
@@ -9,21 +10,23 @@ class EmailVerificationService(
     private val emailService: EmailService,
 ) {
 
-    // TODO: вынести тему и сообщение в ресурсы
+    companion object {
+        val log = LoggerFactory.getLogger(EmailVerificationService::class.java)
+    }
     /**
      * Отправляет письмо с кодом подтверждения. Возвращает код подтверждения
      */
     fun sendVerificationEmail(toEmail: String): String? {
         val code = generateVerifyCode()
-        val message = "Код подтверждения: $code"
         val subject = "Подтверждение входа в бота Telegram"
         runCatching {
             emailService.sendEmail(
                 toEmail,
                 subject,
-                message
+                EmailService.buildBody("Verification", mapOf("code" to code)),
             )
         }.onFailure {
+            log.error("Error sending verification email", it)
             return null
         }
         return code
