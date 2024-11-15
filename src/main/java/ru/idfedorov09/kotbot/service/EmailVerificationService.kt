@@ -1,6 +1,7 @@
 package ru.idfedorov09.kotbot.service
 
 import org.springframework.stereotype.Service
+import ru.idfedorov09.telegram.bot.base.domain.service.EmailService
 import kotlin.random.Random
 
 @Service
