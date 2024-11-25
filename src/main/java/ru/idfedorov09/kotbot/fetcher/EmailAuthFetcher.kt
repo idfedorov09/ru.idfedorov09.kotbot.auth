@@ -42,7 +42,7 @@ class EmailAuthFetcher(
     fun doFetch(){}
 
     @Command("/start")
-    fun startCommand(
+    suspend fun startCommand(
         update: Update,
         user: UserDTO,
     ) {
@@ -58,11 +58,10 @@ class EmailAuthFetcher(
     }
 
     @Callback(AUTH_CHANGE_EMAIL)
-    fun changeEmail(
+    suspend fun changeEmail(
         update: Update,
         user: UserDTO,
         authData: AuthDataDTO,
-
     ) {
         deleteUpdateMessage()
         if (authData.isVerified)
@@ -81,7 +80,7 @@ class EmailAuthFetcher(
     // TODO: ограничения на попытки
     @InputText("ENTER_CORP_EMAIL")
     @Callback(AUTH_RESEND_CODE)
-    fun enterEmail(
+    suspend fun enterEmail(
         update: Update,
         user: UserDTO,
         authData: AuthDataDTO,
@@ -151,7 +150,7 @@ class EmailAuthFetcher(
     }
 
     @InputText("ENTER_VERIFY_CODE")
-    fun enterVerifyCode(
+    suspend fun enterVerifyCode(
         update: Update,
         user: UserDTO,
     ) {
